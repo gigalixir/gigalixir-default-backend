@@ -41,6 +41,7 @@ defmodule GigalixirDefaultBackend.Mixfile do
       {:phoenix_live_reload, "~> 1.0", only: :dev},
       {:gettext, "~> 0.11"},
       {:distillery, github: "bitwalker/distillery"},
+      {:dialyxir, "~> 1.0.0-rc.3", only: [:dev], runtime: false},
       {:cowboy, "~> 1.0"}
     ]
   end
