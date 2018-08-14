@@ -50,9 +50,11 @@ config :phoenix, :stacktrace_depth, 20
 
 # Configure your database
 config :gigalixir_default_backend, GigalixirDefaultBackend.Repo,
-  adapter: Ecto.Adapters.Postgres,
-  username: "postgres",
-  password: "postgres",
-  database: "gigalixir_default_backend_dev",
+  adapter: Ecto.Adapters.MySQL,
+  username: "root",
+  password: "secret",
+  database: "web_dev",
   hostname: "localhost",
-  pool_size: 10
+  pool_size: 1,
+  idle: :active,
+  idle_timeout: 1000

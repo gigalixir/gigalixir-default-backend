@@ -9,6 +9,7 @@ defmodule GigalixirDefaultBackend.Mixfile do
       elixirc_paths: elixirc_paths(Mix.env),
       compilers: [:phoenix, :gettext] ++ Mix.compilers,
       start_permanent: Mix.env == :prod,
+      dialyzer: [plt_add_deps: :transitive],
       aliases: aliases(),
       deps: deps()
     ]
@@ -41,6 +42,9 @@ defmodule GigalixirDefaultBackend.Mixfile do
       {:phoenix_live_reload, "~> 1.0", only: :dev},
       {:gettext, "~> 0.11"},
       {:distillery, github: "bitwalker/distillery"},
+      {:mariaex, ">= 0.0.0"},
+      {:dialyxir, "~> 0.5.0", only: [:dev], runtime: false},
+      # {:dialyxir, "~> 1.0.0-rc.3", only: [:dev], runtime: false},
       {:cowboy, "~> 1.0"}
     ]
   end
