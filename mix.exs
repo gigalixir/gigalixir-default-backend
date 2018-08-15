@@ -42,6 +42,7 @@ defmodule GigalixirDefaultBackend.Mixfile do
       {:gettext, "~> 0.11"},
       {:distillery, github: "bitwalker/distillery"},
       {:dialyxir, "~> 1.0.0-rc.3", only: [:dev], runtime: false},
+      {:algae, "~> 1.2"},
       {:cowboy, "~> 1.0"}
     ]
   end
