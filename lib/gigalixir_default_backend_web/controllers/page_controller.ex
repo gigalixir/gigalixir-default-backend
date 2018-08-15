@@ -7,5 +7,9 @@ defmodule GigalixirDefaultBackendWeb.PageController do
     Repo.get_app_state("foo")
     |> Respondable.respond(conn)
   end
+
+  def health(conn, _params) do
+    text conn, "ok"
+  end
 end
 
