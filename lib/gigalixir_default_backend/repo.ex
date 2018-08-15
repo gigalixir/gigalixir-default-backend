@@ -8,4 +8,9 @@ defmodule GigalixirDefaultBackend.Repo do
   def init(_, opts) do
     {:ok, Keyword.put(opts, :url, System.get_env("DATABASE_URL"))}
   end
+
+  @spec get_app_state(String.t) :: AppState.t
+  def get_app_state(app_name) do
+    AppState.not_deployed
+  end
 end

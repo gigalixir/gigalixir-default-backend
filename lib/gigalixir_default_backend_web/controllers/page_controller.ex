@@ -1,8 +1,10 @@
 defmodule GigalixirDefaultBackendWeb.PageController do
   use GigalixirDefaultBackendWeb, :controller
 
+  alias GigalixirDefaultBackend.Repo
+
   def index(conn, _params) do
-    AppState.not_running
+    Repo.get_app_state("foo")
     |> Respondable.respond(conn)
   end
 end
