@@ -1,3 +1,9 @@
 .stack-work/
 gigalixir-default-backend.cabal
 *~
+
+# compiled stuff
+/.stack/
+
+# because we use /app i.e. `pwd` as HOME inside the docker container
+.bash_history
