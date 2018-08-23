@@ -1,4 +1,0 @@
-# cannot use 1.7.0 because of https://github.com/elixir-lang/elixir/issues/7989
-elixir 1.7.2
-# cannot use 21.0 because of https://github.com/elixir-lang/elixir/issues/5851#issuecomment-406874551
-erlang 20.0
