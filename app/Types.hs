@@ -13,4 +13,5 @@ data Status = Error
             | Ok
             deriving (Show)
 
+-- use newtype?
 type ApiKey = Text
