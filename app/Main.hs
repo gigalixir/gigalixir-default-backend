@@ -13,7 +13,7 @@ import Data.Maybe
 import Data.IORef
 -- The import of ‘Data.Monoid’ is redundant
 -- import Data.Monoid
-import qualified Data.Text as T
+-- import qualified Data.Text as T
 import Api
 import Types
 
@@ -30,17 +30,10 @@ app :: SpockM () MySession MyAppState ()
 app =
     do get root $ 
            handleRoot
-       get ("hello" <//> var) $ \name ->
-           do (DummyAppState ref) <- getState
-              visitorNumber <- liftIO $ atomicModifyIORef' ref $ \i -> (i+1, i+1)
-              text ("Hello " <> name <> ", you are visitor number " <> T.pack (show visitorNumber))
+       get ("healthz") $ text "ok"
 
 handleRoot :: Control.Monad.IO.Class.MonadIO m => ActionCtxT ctx m a
 handleRoot = do
   maybeHost <- header "Host"
-  liftIO $ print $ host maybeHost
-  status <- liftIO $ domainStatus (Domain $ host maybeHost)
-  text $ fromString $ (host maybeHost ++ show status)
-
-host :: Maybe T.Text -> String
-host maybeHost = T.unpack (fromMaybe "" maybeHost)
+  status <- liftIO $ domainStatus (Domain $ fromMaybe "" maybeHost)
+  text $ fromString $ show status

@@ -1,6 +1,8 @@
 module Types where
 
-newtype Domain = Domain String
+import Data.Text
+
+newtype Domain = Domain Text
                  deriving (Show)
 
 data Status = Error

@@ -10,11 +10,10 @@ import Data.Aeson.Lens (_String, key)
 
 domainStatus :: Domain -> IO Types.Status
 domainStatus domain = do
-  print $ constructUrl domain
-  response <- getWith opts (constructUrl domain)
+  response <- getWith opts (unpack $ constructUrl domain)
   return (constructStatus response)
 
-constructUrl :: Domain -> String
+constructUrl :: Domain -> Text
 constructUrl (Domain domain) = "https://api.gigalixir.com/api/default_backend/domain?domain=" <> domain
 
 constructStatus :: Response Data.ByteString.Lazy.Internal.ByteString -> Types.Status
