@@ -7,33 +7,39 @@ import Web.Spock.Config
 import Control.Monad.IO.Class
 import Data.String
 import Data.Maybe
-
--- The import of ‘Control.Monad.Trans’ is redundant
--- import Control.Monad.Trans
-import Data.IORef
--- The import of ‘Data.Monoid’ is redundant
--- import Data.Monoid
--- import qualified Data.Text as T
+import System.Environment
+import Text.Read (readMaybe)
 import Api
 import Types
-
-data MySession = EmptySession
-data MyAppState = DummyAppState (IORef Int)
+import Data.Text
 
 main :: IO ()
-main =
-    do ref <- newIORef 0
-       spockCfg <- defaultSpockCfg EmptySession PCNoDatabase (DummyAppState ref)
-       runSpock 8080 (spock spockCfg app)
+main = do
+  spockCfg <- defaultSpockCfg () PCNoDatabase ()
+  port <- getPort
+  apiKey <- getApiKey
+  print apiKey
+  -- how to thread env vars through the code?
+  runSpock port (spock spockCfg $ app apiKey)
 
-app :: SpockM () MySession MyAppState ()
-app =
-    do get root $ 
-           handleRoot
-       get ("healthz") $ text "ok"
+getPort :: IO Int
+getPort = do
+  port <- lookupEnv "PORT"
+  return $ fromMaybe 8080 $ (readMaybe $ fromMaybe "" $ port :: Maybe Int)
 
-handleRoot :: Control.Monad.IO.Class.MonadIO m => ActionCtxT ctx m a
-handleRoot = do
+getApiKey :: IO Text
+getApiKey = do
+  apiKey <- lookupEnv "APIKEY"
+  return $ fromMaybe "" $ fmap pack apiKey
+
+app :: ApiKey -> SpockM () () () ()
+app apiKey = do
+  get root      $ handleRoot apiKey
+  get "healthz" $ text "ok"
+
+handleRoot :: MonadIO m => ApiKey -> ActionCtxT ctx m a
+handleRoot apiKey = do
   maybeHost <- header "Host"
-  status <- liftIO $ domainStatus (Domain $ fromMaybe "" maybeHost)
-  text $ fromString $ show status
+  status <- liftIO . (domainStatus apiKey). Domain $ fromMaybe "" maybeHost
+  -- TODO: render a template
+  text . fromString . show $ status

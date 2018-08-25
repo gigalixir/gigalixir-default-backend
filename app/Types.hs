@@ -13,3 +13,4 @@ data Status = Error
             | Ok
             deriving (Show)
 
+type ApiKey = Text
