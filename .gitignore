@@ -7,3 +7,4 @@ gigalixir-default-backend.cabal
 
 # because we use /app i.e. `pwd` as HOME inside the docker container
 .bash_history
+.ghc
