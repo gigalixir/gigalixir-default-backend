@@ -67,7 +67,7 @@ renderStatus template (Domain domain) AppNotFound =
       Just [a] ->
         html (render template "app_not_found" (object ["app_name" .= a]))
       _ ->
-        text "Problem finding app name."
+        text "Problem finding app name. Please contact us at help@gigalixir.com."
 renderStatus template (Domain domain) ReleaseNotFound =
   html (render template "release_not_found" (object ["domain" .= domain]))
 renderStatus template (Domain domain) ReplicasNotFound =
