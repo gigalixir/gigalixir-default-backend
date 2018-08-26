@@ -16,6 +16,7 @@ import Network.HTTP.Types.Status
 import Text.Mustache
 import qualified Data.Text.Lazy as TL
 import Data.Aeson
+import Text.Regex
 
 main :: IO ()
 main = do
@@ -50,15 +51,30 @@ app apiKey template = do
 handleRoot :: MonadIO m => ApiKey -> Template -> ActionCtxT ctx m a
 handleRoot apiKey template = do
   -- TODO: strip the port if it exists
-  maybeHost <- header "Host"
-  status <- liftIO . (domainStatus apiKey). Domain $ fromMaybe "" maybeHost
   _ <- setStatus notFound404
-  renderStatus template (Domain $ fromMaybe "" maybeHost) status
+  maybeHost <- header "Host"
+  let domain = Domain $ fromMaybe "" maybeHost in do
+    status <- liftIO . (domainStatus apiKey) $ domain 
+    renderStatus template domain status
 
 renderStatus :: MonadIO m => Template -> Domain -> Types.Status -> ActionCtxT ctx m a
 renderStatus template (Domain domain) DomainNotFound =
   html (render template "domain_not_found" (object ["domain" .= domain]))
-renderStatus _ _ status = text . fromString . show $ status
+renderStatus template (Domain domain) AppNotFound =
+  -- regex from web/models/app.ex
+  let app_name = matchRegex (mkRegex "^([a-zA-Z0-9_-]+)[.]gigalixirapp[.]com$") (unpack domain) in
+    case app_name of
+      Just [a] ->
+        html (render template "app_not_found" (object ["app_name" .= a]))
+      _ ->
+        text "Problem finding app name."
+renderStatus template (Domain domain) ReleaseNotFound =
+  html (render template "release_not_found" (object ["domain" .= domain]))
+renderStatus template (Domain domain) ReplicasNotFound =
+  html (render template "replicas_not_found" (object ["domain" .= domain]))
+renderStatus template (Domain domain) Ok =
+  html (render template "ok" (object ["domain" .= domain]))
+renderStatus _ (Domain domain) Types.Error = text (domain <> ":" <> (fromString $ show Types.Error))
 
 render :: Template -> PName -> Value -> Text
 render template pname = TL.toStrict . renderMustache (template {templateActual = pname})
