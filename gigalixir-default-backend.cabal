@@ -72,4 +72,6 @@ test-suite gigalixir-default-backend-test
   build-depends:
       base >=4.7 && <5
     , gigalixir-default-backend
+    , hspec
+    , hspec-wai
   default-language: Haskell2010

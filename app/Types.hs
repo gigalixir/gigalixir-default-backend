@@ -10,6 +10,7 @@ data Status = Error
             | AppNotFound
             | ReleaseNotFound
             | ReplicasNotFound
+            | ReleaseUnhealthy
             | Ok
             deriving (Show)
 

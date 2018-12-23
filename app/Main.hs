@@ -51,11 +51,23 @@ app apiKey template = do
 handleRoot :: MonadIO m => ApiKey -> Template -> ActionCtxT ctx m a
 handleRoot apiKey template = do
   -- TODO: strip the port if it exists
+  maybeXCode <- header "X-Code"
+  handleRootWithXCode maybeXCode apiKey template
+
+handleRootWithXCode :: MonadIO m => Maybe Text -> ApiKey -> Template -> ActionCtxT ctx m a
+handleRootWithXCode Nothing apiKey template = do
   _ <- setStatus notFound404
   maybeHost <- header "Host"
   let domain = Domain $ fromMaybe "" maybeHost in do
     status <- liftIO . (domainStatus apiKey) $ domain 
     renderStatus template domain status
+handleRootWithXCode (Just "504") _apiKey template = do
+  _ <- setStatus gatewayTimeout504
+  maybeHost <- header "Host"
+  let domain = Domain $ fromMaybe "" maybeHost in do
+    -- domain is not really used?
+    renderStatus template domain ReleaseUnhealthy
+handleRootWithXCode (Just _) apiKey template = handleRootWithXCode Nothing apiKey template
 
 renderStatus :: MonadIO m => Template -> Domain -> Types.Status -> ActionCtxT ctx m a
 renderStatus template (Domain domain) DomainNotFound =
@@ -68,6 +80,8 @@ renderStatus template (Domain domain) AppNotFound =
         html (render template "app_not_found" (object ["app_name" .= a]))
       _ ->
         text "Problem finding app name. Please contact us at help@gigalixir.com."
+renderStatus template (Domain domain) ReleaseUnhealthy =
+  html (render template "release_unhealthy" (object ["domain" .= domain]))
 renderStatus template (Domain domain) ReleaseNotFound =
   html (render template "release_not_found" (object ["domain" .= domain]))
 renderStatus template (Domain domain) ReplicasNotFound =
