@@ -3,6 +3,7 @@ module Main where
 
 import Web.Spock
 import Web.Spock.Config
+import Network.Wai (Middleware)
 
 import Control.Monad.IO.Class
 import Data.String
@@ -20,17 +21,21 @@ import Text.Regex
 
 main :: IO ()
 main = do
-  template <- compileMustacheDir "index" "views/"
-  -- TODO: EmptySession? defaultCfg sets a cookie
-  spockCfg <- defaultSpockCfg () PCNoDatabase ()
   port <- getPort
-  apiKey <- getApiKey
   -- how to best thread env vars through the code?
   -- here we just pass params all the way down
   -- is it better to use a Reader monad?
   -- what about the ActionCtxT? does it have something
   -- we can use? AppState appropriate?
-  runSpock port (spock spockCfg $ app apiKey template)
+  runSpock port app
+
+app :: IO Middleware
+app = do
+  template <- compileMustacheDir "index" "views/"
+  -- TODO: EmptySession? defaultCfg sets a cookie
+  spockCfg <- defaultSpockCfg () PCNoDatabase ()
+  apiKey <- getApiKey
+  (spock spockCfg $ routes apiKey template)
 
 getPort :: IO Int
 getPort = do
@@ -42,8 +47,8 @@ getApiKey = do
   apiKey <- lookupEnv "APIKEY"
   return $ fromMaybe "" $ fmap pack apiKey
 
-app :: ApiKey -> Template -> SpockM () () () ()
-app apiKey template = do
+routes :: ApiKey -> Template -> SpockM () () () ()
+routes apiKey template = do
   get root      $ handleRoot apiKey template
   get "healthz" $ text "ok"
   get wildcard $ \_ -> handleRoot apiKey template
