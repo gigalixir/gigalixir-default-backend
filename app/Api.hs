@@ -9,9 +9,15 @@ import Network.Wreq
 import Control.Lens
 import Data.Aeson.Lens (_String, key)
 
-domainStatus :: ApiKey -> Domain -> IO Types.Status
+class Monad m => GigalixirApiM m where
+  getWith :: Options -> String -> m (Response ByteString)
+
+instance GigalixirApiM IO where
+  getWith = Network.Wreq.getWith
+
+domainStatus :: GigalixirApiM m => ApiKey -> Domain -> m Types.Status
 domainStatus apiKey domain = do
-  response <- getWith (opts apiKey) (unpack $ constructUrl domain)
+  response <- Api.getWith (opts apiKey) (unpack $ constructUrl domain)
   return (getStatus response)
 
 -- TODO: make this a config value

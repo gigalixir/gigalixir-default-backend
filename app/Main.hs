@@ -1,8 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
-import Web.Spock
-import Web.Spock.Config
+import Web.Spock.Core 
 import Network.Wai (Middleware)
 
 import Control.Monad.IO.Class
@@ -33,9 +32,10 @@ app :: IO Middleware
 app = do
   template <- compileMustacheDir "index" "views/"
   -- TODO: EmptySession? defaultCfg sets a cookie
-  spockCfg <- defaultSpockCfg () PCNoDatabase ()
+  -- spockCfg <- defaultSpockCfg () PCNoDatabase ()
   apiKey <- getApiKey
-  (spock spockCfg $ routes apiKey template)
+  -- (spock spockCfg $ routes apiKey template)
+  spockT id $ routes apiKey template
 
 getPort :: IO Int
 getPort = do
@@ -47,11 +47,11 @@ getApiKey = do
   apiKey <- lookupEnv "APIKEY"
   return $ fromMaybe "" $ fmap pack apiKey
 
-routes :: ApiKey -> Template -> SpockM () () () ()
+routes :: ApiKey -> Template -> SpockCtxT ctx IO ()
 routes apiKey template = do
   get root      $ handleRoot apiKey template
   get "healthz" $ text "ok"
-  get wildcard $ \_ -> handleRoot apiKey template
+  get wildcard  $ \_ -> handleRoot apiKey template
 
 handleRoot :: MonadIO m => ApiKey -> Template -> ActionCtxT ctx m a
 handleRoot apiKey template = do
@@ -97,3 +97,5 @@ renderStatus _ (Domain domain) Types.Error = text (domain <> ":" <> (fromString 
 
 render :: Template -> PName -> Value -> Text
 render template pname = TL.toStrict . renderMustache (template {templateActual = pname})
+
+

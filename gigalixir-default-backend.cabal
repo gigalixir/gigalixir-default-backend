@@ -47,7 +47,8 @@ executable gigalixir-default-backend-exe
   build-depends:
       base >=4.7 && <5
     , gigalixir-default-backend
-    , Spock >=0.11
+    , Spock >=0.13
+    , Spock-core >=0.13
     , mtl
     , text
     , wreq
@@ -82,7 +83,8 @@ test-suite gigalixir-default-backend-test
     , hspec-wai
     -- copied from above. is this necessary? extract library
     -- instead?
-    , Spock >=0.11
+    , Spock >=0.13
+    , Spock-core >=0.13
     , text
     , wreq
     , lens
