@@ -50,6 +50,7 @@ executable gigalixir-default-backend-exe
     , Spock >=0.13
     , Spock-core >=0.13
     , mtl
+    , transformers
     , text
     , wreq
     , lens

@@ -4,7 +4,8 @@ module Main where
 import Web.Spock.Core 
 import Network.Wai (Middleware)
 
-import Control.Monad.IO.Class
+import Control.Monad.IO.Class (MonadIO)
+import Control.Monad.Trans.Class (lift)
 import Data.String
 import Data.Maybe
 import System.Environment
@@ -47,24 +48,24 @@ getApiKey = do
   apiKey <- lookupEnv "APIKEY"
   return $ fromMaybe "" $ fmap pack apiKey
 
-routes :: ApiKey -> Template -> SpockCtxT ctx IO ()
+routes :: (GigalixirApiM m, MonadIO m) => ApiKey -> Template -> SpockCtxT ctx m ()
 routes apiKey template = do
   get root      $ handleRoot apiKey template
   get "healthz" $ text "ok"
   get wildcard  $ \_ -> handleRoot apiKey template
 
-handleRoot :: MonadIO m => ApiKey -> Template -> ActionCtxT ctx m a
+handleRoot :: (GigalixirApiM m, MonadIO m) => ApiKey -> Template -> ActionCtxT ctx m a
 handleRoot apiKey template = do
   -- TODO: strip the port if it exists
   maybeXCode <- header "X-Code"
   handleRootWithXCode maybeXCode apiKey template
 
-handleRootWithXCode :: MonadIO m => Maybe Text -> ApiKey -> Template -> ActionCtxT ctx m a
+handleRootWithXCode :: (GigalixirApiM m, MonadIO m) => Maybe Text -> ApiKey -> Template -> ActionCtxT ctx m a
 handleRootWithXCode Nothing apiKey template = do
   _ <- setStatus notFound404
   maybeHost <- header "Host"
   let domain = Domain $ fromMaybe "" maybeHost in do
-    status <- liftIO . (domainStatus apiKey) $ domain 
+    status <- lift $ (domainStatus apiKey) $ domain 
     renderStatus template domain status
 handleRootWithXCode (Just "504") _apiKey template = do
   _ <- setStatus gatewayTimeout504
