@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Api where
 
-import Data.ByteString.Lazy.Internal
+import qualified Data.ByteString.Lazy as BL
 import Data.Text
 import Data.Text.Encoding
 import Types
@@ -10,7 +10,7 @@ import Control.Lens
 import Data.Aeson.Lens (_String, key)
     
 class Monad m => MonadHttp m where
-  getWith :: Options -> String -> m (Response ByteString)
+  getWith :: Options -> String -> m (Response BL.ByteString)
 
 instance MonadHttp IO where
   getWith = Network.Wreq.getWith
@@ -24,7 +24,7 @@ domainStatus apiKey domain = do
 constructUrl :: Domain -> Text
 constructUrl (Domain domain) = "https://api.gigalixir.com/api/default_backend/domain?domain=" <> domain
 
-getStatus :: Response ByteString -> Types.Status
+getStatus :: Response BL.ByteString -> Types.Status
 getStatus r = 
   convertStatus $ r ^. responseBody . key "data" . key "status" . _String
 

@@ -11,7 +11,8 @@ import Control.Monad.Trans.Class (lift)
 import Data.String
 import Data.Maybe
 -- import Data.Function
-import Data.ByteString.Lazy.Internal as BL
+import Data.ByteString.Lazy.Char8 as C8 (putStrLn)
+import qualified Data.ByteString.Lazy as BL
 import Network.HTTP.Client.Internal
 import System.Environment
 -- import Text.Read (readMaybe)
@@ -25,6 +26,9 @@ import Data.Aeson
 import Text.Regex
 import Control.Monad.Trans.Reader
 import Network.HTTP.Types.Version (http11)
+
+import qualified Control.Lens as L
+import qualified Network.Wreq as W
 
 succeededResponse :: Response BL.ByteString
 succeededResponse = Response
@@ -57,7 +61,7 @@ main = do
   -- we can use? AppState appropriate?
   runSpock myPort app
 
-hole :: MonadIO m => ReaderT (IO (Response ByteString)) m a -> m a
+hole :: MonadIO m => ReaderT (IO (Response BL.ByteString)) m a -> m a
 hole r = runReaderT r (return succeededResponse) 
 
 app :: IO Middleware
@@ -82,27 +86,27 @@ getApiKey = do
   apiKey <- lookupEnv "APIKEY"
   return $ fromMaybe "" $ fmap pack apiKey
 
-routes :: MonadIO m => ApiKey -> Template -> SpockCtxT ctx (ReaderT (IO (Response ByteString)) m) ()
+routes :: MonadIO m => ApiKey -> Template -> SpockCtxT ctx (ReaderT (IO (Response BL.ByteString)) m) ()
 routes apiKey template = do
   get root      $ handleRoot apiKey template
   get "healthz" $ text "ok"
   get wildcard  $ \_ -> handleRoot apiKey template
 
-handleRoot :: MonadIO m => ApiKey -> Template -> ActionCtxT ctx (ReaderT (IO (Response ByteString)) m) a
+handleRoot :: MonadIO m => ApiKey -> Template -> ActionCtxT ctx (ReaderT (IO (Response BL.ByteString)) m) a
 handleRoot apiKey template = do
   -- TODO: strip the port if it exists
   maybeXCode <- header "X-Code"
   handleRootWithXCode maybeXCode apiKey template
 
-handleRootWithXCode :: MonadIO m => Maybe Text -> ApiKey -> Template -> ActionCtxT ctx (ReaderT (IO (Response ByteString)) m) a
+handleRootWithXCode :: MonadIO m => Maybe Text -> ApiKey -> Template -> ActionCtxT ctx (ReaderT (IO (Response BL.ByteString)) m) a
 handleRootWithXCode Nothing apiKey template = do
   _ <- setStatus notFound404
   maybeHost <- header "Host"
   let domain = Domain $ fromMaybe "" maybeHost in do
     status <- liftIO $ (domainStatus apiKey) $ domain 
-    _myResponse <- lift apiResponse
+    myResponse <- lift apiResponse
     -- myResponse is an ActionCtxT ctx m ByteString
-    -- _ <- liftIO . putStrLn . body $ myResponse
+    _ <- liftIO . C8.putStrLn $ myResponse L.^. W.responseBody
     renderStatus template domain status
 handleRootWithXCode (Just "504") _apiKey template = do
   _ <- setStatus gatewayTimeout504
@@ -112,7 +116,7 @@ handleRootWithXCode (Just "504") _apiKey template = do
     renderStatus template domain ReleaseUnhealthy
 handleRootWithXCode (Just _) apiKey template = handleRootWithXCode Nothing apiKey template
 
-renderStatus :: MonadIO m => Template -> Domain -> Types.Status -> ActionCtxT ctx (ReaderT (IO (Response ByteString)) m) a
+renderStatus :: MonadIO m => Template -> Domain -> Types.Status -> ActionCtxT ctx (ReaderT (IO (Response BL.ByteString)) m) a
 renderStatus template (Domain domain) DomainNotFound =
   html (render template "domain_not_found" (object ["domain" .= domain]))
 renderStatus template (Domain domain) AppNotFound =
