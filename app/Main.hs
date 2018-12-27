@@ -11,7 +11,7 @@ import Control.Monad.Trans.Class (lift)
 import Data.String
 import Data.Maybe
 -- import Data.Function
-import Data.ByteString.Lazy.Char8 as C8 (putStrLn)
+-- import Data.ByteString.Lazy.Char8 as C8 (putStrLn)
 import qualified Data.ByteString.Lazy as BL
 import Network.HTTP.Client.Internal
 import System.Environment
@@ -27,7 +27,7 @@ import Text.Regex
 import Control.Monad.Trans.Reader
 import Network.HTTP.Types.Version (http11)
 
-import qualified Control.Lens as L
+-- import qualified Control.Lens as L
 import qualified Network.Wreq as W
 
 succeededResponse :: Response BL.ByteString
@@ -35,7 +35,7 @@ succeededResponse = Response
   { responseStatus = mkStatus 200 "success"
   , responseVersion = http11
   , responseHeaders = []
-  , responseBody = "{\"data\":{\"status\":\"ok\"}"
+  , responseBody = "{\"data\":{\"status\":\"ok\"}}"
   , responseCookieJar = createCookieJar []
   , responseClose' = ResponseClose (return () :: IO ())
   }
@@ -103,10 +103,11 @@ handleRootWithXCode Nothing apiKey template = do
   _ <- setStatus notFound404
   maybeHost <- header "Host"
   let domain = Domain $ fromMaybe "" maybeHost in do
-    status <- liftIO $ (domainStatus apiKey) $ domain 
+    -- status <- liftIO $ (domainStatus apiKey) $ domain 
     myResponse <- lift $ apiResponse (opts apiKey) (unpack . constructUrl $ domain)
+    status <- return (getStatus myResponse)
     -- myResponse is an ActionCtxT ctx m ByteString
-    _ <- liftIO . C8.putStrLn $ myResponse L.^. W.responseBody
+    -- _ <- liftIO . C8.putStrLn $ myResponse L.^. W.responseBody
     renderStatus template domain status
 handleRootWithXCode (Just "504") _apiKey template = do
   _ <- setStatus gatewayTimeout504
