@@ -71,8 +71,8 @@ app = do
   -- spockCfg <- defaultSpockCfg () PCNoDatabase ()
   apiKey <- getApiKey
   -- (spock spockCfg $ routes apiKey template)
-  -- spockT (runner) $ routes apiKey template
-  spockT (mockRunner) $ routes apiKey template
+  spockT (runner) $ routes apiKey template
+  -- spockT (mockRunner) $ routes apiKey template
 
 -- Fetches the PORT environment variable and converts it from a string to an int,
 -- and uses 8080 if none was provided
