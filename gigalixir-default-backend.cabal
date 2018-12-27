@@ -53,6 +53,7 @@ executable gigalixir-default-backend-exe
     , transformers
     , text
     , wreq
+    , http-client
     , lens
     , aeson
     , lens-aeson
