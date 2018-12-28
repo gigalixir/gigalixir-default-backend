@@ -6,7 +6,7 @@ module Main where
 import Web.Spock.Core 
 import Network.Wai (Middleware)
 
-import Control.Monad.IO.Class (MonadIO, liftIO)
+import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Trans.Class (lift)
 import Data.String
 import Data.Maybe
@@ -25,6 +25,7 @@ import qualified Data.Text.Lazy as TL
 import Data.Aeson
 import Text.Regex
 import Control.Monad.Trans.Reader
+import Control.Monad.Trans.Identity
 import Network.HTTP.Types.Version (http11)
 
 -- import qualified Control.Lens as L
@@ -40,15 +41,15 @@ succeededResponse = Response
   , responseClose' = ResponseClose (return () :: IO ())
   }
 
-makeRequest :: W.Options -> String -> (W.Options -> String -> IO a) -> IO a
+makeRequest :: MonadHttp i => W.Options -> String -> (W.Options -> String -> i a) -> i a
 makeRequest options url requester = requester options url
 
-mockRunner :: MonadIO m => ReaderT (W.Options -> String -> IO (Response BL.ByteString)) m a -> m a
-mockRunner r = runReaderT r mockRequester
-  where mockRequester _ _ = return succeededResponse
+-- mockRunner :: MonadIO m => ReaderT (W.Options -> String -> IO (Response BL.ByteString)) m a -> m a
+-- mockRunner r = runReaderT r mockRequester
+--   where mockRequester _ _ = return succeededResponse
 
-apiResponse :: (MonadIO m) => W.Options -> String -> ReaderT (W.Options -> String -> IO a) m a
-apiResponse options url = asks (makeRequest options url) >>= liftIO
+apiResponse :: (MonadHttp i) => W.Options -> String -> ReaderT (W.Options -> String -> i a) i a
+apiResponse options url = asks (makeRequest options url) >>= lift
 
 main :: IO ()
 main = do
@@ -60,9 +61,17 @@ main = do
   -- we can use? AppState appropriate?
   runSpock myPort app
 
+class Monad m => MonadHttp m where
+  getWith :: W.Options -> String -> m (Response BL.ByteString)
 
-runner :: MonadIO m => ReaderT (W.Options -> String -> IO (Response BL.ByteString)) m a -> m a
-runner r = runReaderT r Api.getWith
+instance MonadHttp IO where
+  getWith = W.getWith
+
+instance Monad m => MonadHttp (IdentityT m) where
+  getWith _ _ = return succeededResponse
+
+runner :: (MonadHttp i, MonadIO m) => ReaderT (W.Options -> String -> i (Response BL.ByteString)) m a -> m a
+runner r = runReaderT r getWith
 
 app :: IO Middleware
 app = do
@@ -86,19 +95,19 @@ getApiKey = do
   apiKey <- lookupEnv "APIKEY"
   return $ fromMaybe "" $ fmap pack apiKey
 
-routes :: MonadIO m => ApiKey -> Template -> SpockCtxT ctx (ReaderT (W.Options -> String -> IO (Response BL.ByteString)) m) ()
+routes :: (MonadHttp i, MonadIO i) => ApiKey -> Template -> SpockCtxT ctx (ReaderT (W.Options -> String -> i (Response BL.ByteString)) i) ()
 routes apiKey template = do
   get root      $ handleRoot apiKey template
   get "healthz" $ text "ok"
   get wildcard  $ \_ -> handleRoot apiKey template
 
-handleRoot :: MonadIO m => ApiKey -> Template -> ActionCtxT ctx (ReaderT (W.Options -> String -> IO (Response BL.ByteString)) m) a
+handleRoot :: (MonadHttp i, MonadIO i) => ApiKey -> Template -> ActionCtxT ctx (ReaderT (W.Options -> String -> i (Response BL.ByteString)) i) a
 handleRoot apiKey template = do
   -- TODO: strip the port if it exists
   maybeXCode <- header "X-Code"
   handleRootWithXCode maybeXCode apiKey template
 
-handleRootWithXCode :: MonadIO m => Maybe Text -> ApiKey -> Template -> ActionCtxT ctx (ReaderT (W.Options -> String -> IO (Response BL.ByteString)) m) a
+handleRootWithXCode :: (MonadHttp i, MonadIO i) => Maybe Text -> ApiKey -> Template -> ActionCtxT ctx (ReaderT (W.Options -> String -> i (Response BL.ByteString)) i) a
 handleRootWithXCode Nothing apiKey template = do
   _ <- setStatus notFound404
   maybeHost <- header "Host"
@@ -117,7 +126,7 @@ handleRootWithXCode (Just "504") _apiKey template = do
     renderStatus template domain ReleaseUnhealthy
 handleRootWithXCode (Just _) apiKey template = handleRootWithXCode Nothing apiKey template
 
-renderStatus :: MonadIO m => Template -> Domain -> Types.Status -> ActionCtxT ctx (ReaderT (W.Options -> String -> IO (Response BL.ByteString)) m) a
+renderStatus :: (MonadHttp i, MonadIO m) => Template -> Domain -> Types.Status -> ActionCtxT ctx (ReaderT (W.Options -> String -> i (Response BL.ByteString)) m) a
 renderStatus template (Domain domain) DomainNotFound =
   html (render template "domain_not_found" (object ["domain" .= domain]))
 renderStatus template (Domain domain) AppNotFound =

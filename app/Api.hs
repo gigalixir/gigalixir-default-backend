@@ -9,16 +9,11 @@ import Network.Wreq
 import Control.Lens
 import Data.Aeson.Lens (_String, key)
     
-class Monad m => MonadHttp m where
-  getWith :: Options -> String -> m (Response BL.ByteString)
 
-instance MonadHttp IO where
-  getWith = Network.Wreq.getWith
-
-domainStatus :: MonadHttp m => ApiKey -> Domain -> m Types.Status
-domainStatus apiKey domain = do
-  response <- Api.getWith (opts apiKey) (unpack $ constructUrl domain)
-  return (getStatus response)
+-- domainStatus :: MonadHttp m => ApiKey -> Domain -> m Types.Status
+-- domainStatus apiKey domain = do
+--   response <- Api.getWith (opts apiKey) (unpack $ constructUrl domain)
+--   return (getStatus response)
 
 -- TODO: make this a config value
 constructUrl :: Domain -> Text
