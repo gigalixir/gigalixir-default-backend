@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE RankNTypes #-}
 
 module Main where
 
@@ -58,20 +58,20 @@ main = do
   -- is it better to use a Reader monad?
   -- what about the ActionCtxT? does it have something
   -- we can use? AppState appropriate?
-  runSpock myPort app
+  runSpock myPort $ app runner
 
 
 runner :: MonadIO m => ReaderT (W.Options -> String -> IO (Response BL.ByteString)) m a -> m a
 runner r = runReaderT r Api.getWith
 
-app :: IO Middleware
-app = do
+app :: (forall a. ReaderT (W.Options -> String -> IO (Response BL.ByteString)) IO a -> IO a) -> IO Middleware
+app r = do
   template <- compileMustacheDir "index" "views/"
   -- TODO: EmptySession? defaultCfg sets a cookie
   -- spockCfg <- defaultSpockCfg () PCNoDatabase ()
   apiKey <- getApiKey
   -- (spock spockCfg $ routes apiKey template)
-  spockT (runner) $ routes apiKey template
+  spockT (r) $ routes apiKey template
   -- spockT (mockRunner) $ routes apiKey template
 
 -- Fetches the PORT environment variable and converts it from a string to an int,
