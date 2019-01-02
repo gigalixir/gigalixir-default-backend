@@ -88,8 +88,11 @@ test-suite gigalixir-default-backend-test
     -- instead?
     , Spock >=0.13
     , Spock-core >=0.13
+    , mtl
+    , transformers
     , text
     , wreq
+    , http-client
     , lens
     , aeson
     , lens-aeson

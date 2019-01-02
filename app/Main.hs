@@ -30,22 +30,8 @@ import Network.HTTP.Types.Version (http11)
 -- import qualified Control.Lens as L
 import qualified Network.Wreq as W
 
-succeededResponse :: Response BL.ByteString
-succeededResponse = Response
-  { responseStatus = mkStatus 200 "success"
-  , responseVersion = http11
-  , responseHeaders = []
-  , responseBody = "{\"data\":{\"status\":\"ok\"}}"
-  , responseCookieJar = createCookieJar []
-  , responseClose' = ResponseClose (return () :: IO ())
-  }
-
 makeRequest :: W.Options -> String -> (W.Options -> String -> IO a) -> IO a
 makeRequest options url requester = requester options url
-
-mockRunner :: MonadIO m => ReaderT (W.Options -> String -> IO (Response BL.ByteString)) m a -> m a
-mockRunner r = runReaderT r mockRequester
-  where mockRequester _ _ = return succeededResponse
 
 apiResponse :: (MonadIO m) => W.Options -> String -> ReaderT (W.Options -> String -> IO a) m a
 apiResponse options url = asks (makeRequest options url) >>= liftIO
