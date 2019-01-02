@@ -3,6 +3,7 @@
 # development
 docker run -it --rm -p 4001:8080 -v /etc/passwd:/etc/passwd -u `id -u`:`id -g` -v `pwd`:/app -w /app -e HOME=/app haskell /bin/bash
 stack build --fast --pedantic
+stack test
 APIKEY=REDACTED stack exec gigalixir-default-backend-exe
 curl -i localhost:4001 -H 'Host: bar.gigalixirapp.com' -H 'X-Code: 504'
 
