@@ -1,8 +1,0 @@
-FROM haskell
-
-RUN apt-get update && apt-get install -y netbase ca-certificates && rm -rf /var/lib/apt/lists/*
-ENTRYPOINT "/app/gigalixir-default-backend-exe"
-EXPOSE 8080
-WORKDIR /app
-COPY ./views /app/views
-COPY ./gigalixir-default-backend-exe /app/gigalixir-default-backend-exe
